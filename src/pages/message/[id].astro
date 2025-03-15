@@ -18,8 +18,10 @@ if (!message) {
 ---
 
 <Layout>
-    <div style="margin: 1rem; padding: 1rem; width: max-content; background: #fff1;">
-        <h1 style="color: #a57549">{message.id}</h1>
+    <div style="margin: 1rem; padding: 1rem; width: fit-content; background: #fff1;">
+        <h1 class="mono" style="color: #a57549; font-size: 1.75rem;">
+            {message.id.split("").map(c => c.match(/\d/) ? <span style="color: orangered">{c}</span> : c)}
+        </h1>
         <p>
             {message.message}
         </p>

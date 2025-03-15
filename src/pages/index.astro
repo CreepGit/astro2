@@ -22,14 +22,15 @@ const messages = await prisma.frontPageMessage.findMany()
 ---
 
 <Layout>
-	<h1>Astro Website</h1>
+	<h1>The Content Driven Website</h1>
 	<h3>Messages</h3>
 	<div style="border: 1px dashed red; padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
 		{messages.map(m => <span><a href=`message/${m.id}` class="mono" style="color: #a57549">{m.id}</a>: {m.message}</span>)}
 	</div>
-	<h3>Add Message</h3>
-	<form method="POST">
-		<input type="text" name="message" />
-		<button type="submit">Add</button>
+	<form method="POST" style="display: flex; flex-direction: row; gap: 0.25rem; width: 100%; padding-top: 0.5rem;">
+		<span>Add Message</span>
+		<input type="text" name="message" minlength="5" maxlength="200" style="flex-grow: 15;" />
+		<button type="submit" style="flex-grow: 2;">Add</button>
 	</form>
+	<div style="min-height: 30px;"></div>
 </Layout>
