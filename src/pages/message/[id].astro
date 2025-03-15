@@ -1,0 +1,27 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient()
+
+const { id } = Astro.params
+
+const message = await prisma.frontPageMessage.findUnique({
+    where: {
+        id: id
+    }
+})
+
+if (!message) {
+    return Astro.redirect("/notfound")
+}
+---
+
+<Layout>
+    <div style="margin: 1rem; padding: 1rem; width: max-content; background: #fff1;">
+        <h1 style="color: #a57549">{message.id}</h1>
+        <p>
+            {message.message}
+        </p>
+    </div>
+</Layout>

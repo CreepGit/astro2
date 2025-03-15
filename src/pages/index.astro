@@ -1,11 +1,35 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro"
+import { PrismaClient } from "@prisma/client"
+import utils from "../server/utils"
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const prisma = new PrismaClient()
+
+if (Astro.request.method == "POST") {
+	const data = await Astro.request.formData()
+	const message = data.get("message")
+	if (message) {
+		await prisma.frontPageMessage.create({
+			data: {
+				id: await utils.getNextMessageId(),
+				message: message as string
+			}
+		})
+	}
+	return Astro.redirect("/")
+}
+const messages = await prisma.frontPageMessage.findMany()
 ---
 
 <Layout>
-	<Welcome />
+	<h1>Astro Website</h1>
+	<h3>Messages</h3>
+	<div style="border: 1px dashed red; padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
+		{messages.map(m => <span><a href=`message/${m.id}` class="mono" style="color: #a57549">{m.id}</a>: {m.message}</span>)}
+	</div>
+	<h3>Add Message</h3>
+	<form method="POST">
+		<input type="text" name="message" />
+		<button type="submit">Add</button>
+	</form>
 </Layout>
