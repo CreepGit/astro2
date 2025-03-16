@@ -23,6 +23,7 @@ const messages = await prisma.frontPageMessage.findMany()
 
 <Layout>
 	<h1>The Content Driven Website</h1>
+	<p>Small edit to see if automatic deployment works #2</p>
 	<h3>Messages</h3>
 	<div style="border: 1px dashed red; padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
 		{messages.map(m => <span><a href=`message/${m.id}` class="mono" style="color: #a57549">{m.id}</a>: {m.message}</span>)}
