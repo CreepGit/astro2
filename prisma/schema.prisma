@@ -11,12 +11,15 @@ datasource db {
 }
 
 model ServerValues {
-  key String @id
+  key   String @id
   value String
 }
 
 model FrontPageMessage {
-  id String @id
-  message String
-  createdAt DateTime @default(now())
+  id        String             @id
+  message   String
+  createdAt DateTime           @default(now())
+  replyToId String?
+  replyTo   FrontPageMessage?  @relation(name: "ReplyToMessage", fields: [replyToId], references: [id])
+  replies   FrontPageMessage[] @relation("ReplyToMessage")
 }

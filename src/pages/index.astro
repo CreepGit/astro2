@@ -5,24 +5,54 @@ import { getNextIdForModel } from "../server/utils"
 
 const prisma = new PrismaClient()
 
+const errors = {
+	message: "",
+	replyToId: "",
+}
 if (Astro.request.method == "POST") {
 	const data = await Astro.request.formData()
 	const message = data.get("message")
-	if (message) {
+	const replyToId = data.get("replyToId")
+	
+	const repliedMessage = await prisma.frontPageMessage.findUnique({
+		where: {
+			id: replyToId as string
+		}
+	})
+
+	if (!message) {
+		errors.message = "Enter a message"
+	}
+	
+	if (replyToId && (repliedMessage == null)) {
+		// Show error on the field
+		errors.replyToId = "Invalid ID"
+	}
+	
+	const hasErrors = Object.values(errors).some(e => e != "")
+	if (!hasErrors) {
 		await prisma.frontPageMessage.create({
 			data: {
 				id: await getNextIdForModel("Message"),
-				message: message as string
+				message: message as string,
+				replyToId: (replyToId||undefined) as string|undefined,
 			}
 		})
+		return Astro.redirect("/")
 	}
-	return Astro.redirect("/")
 }
 const messages = await prisma.frontPageMessage.findMany({
 	orderBy: {
 		createdAt: "desc",
 	},
-	take: 10,
+	take: 20,
+	include: {
+		replyTo: {
+			select: {
+				id: true,
+			}
+		}
+	}
 })
 messages.reverse()
 ---
@@ -30,13 +60,69 @@ messages.reverse()
 <Layout>
 	<h1>The Content Driven Website</h1>
 	<h3>Messages</h3>
-	<div style="border: 1px dashed red; padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
-		{messages.map(m => <span><a href=`message/${m.id}` class="mono" style="color: #a57549">{m.id}</a>: {m.message}</span>)}
+	<div class="messages">
+		{messages.map(m => <div class="message" id={`message-${m.id}`}>
+			{m.replyToId && <div class="replyTo">
+					<span>Reply to
+					<a href={`#message-${m.replyToId}`}>{m.replyToId}</a>
+					</span>
+				</div>}
+			<span>
+				<a href=`message/${m.id}` class="mono" style="color: #a57549">{m.id}</a>: {m.message}
+			</span>
+		</div>)}
 	</div>
 	<form method="POST" style="display: flex; flex-direction: row; gap: 0.25rem; width: 100%; padding-top: 0.5rem;">
 		<span>Add Message</span>
-		<input type="text" name="message" minlength="5" maxlength="200" style="flex-grow: 15;" />
+		<div class="inputArea" style="flex-grow: 15;">
+			<input type="text" name="message" minlength="5" maxlength="200" />
+			{errors.message && <span style="color: red;">{errors.message}</span>}
+		</div>
+		<div class="inputArea">
+			<input type="text" name="replyToId" value="" placeholder="Reply to ID" />
+			{errors.replyToId && <span style="color: red;">{errors.replyToId}</span>}
+		</div>
 		<button type="submit" style="flex-grow: 2;">Add</button>
 	</form>
 	<div style="min-height: 30px;"></div>
 </Layout>
+
+<style>
+	.messages {
+		border: 1px dashed red;
+		padding: 1rem 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+	.inputArea {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+	.inputArea input {
+		flex-grow: 1;
+	}
+	.replyTo {
+		--reply-to-color: #fff6;
+		font-size: 0.66rem;
+		border-top: 1px solid var(--reply-to-color);
+		border-left: 1px solid var(--reply-to-color);
+		color: var(--reply-to-color);
+		width: fit-content;
+		padding-left: 0.5rem;
+		border-radius: 0.6rem 0 0 0;
+	}
+	.replyTo a {
+		color: inherit;
+	}
+	.replyTo:has(a:hover) {
+		--reply-to-color: #fff;
+	}
+	.message {
+		padding: 0 1rem;
+	}
+	.message:target {
+		background-color: #f0f0f015;
+	}
+</style>
