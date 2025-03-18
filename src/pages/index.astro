@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro"
 import { PrismaClient } from "@prisma/client"
-import { getNextIdForModel } from "../server/utils"
+import { getNextIdForModel, GOOD_LCG_VALUES } from "../server/utils"
 
 const prisma = new PrismaClient()
 
@@ -59,6 +59,8 @@ messages.reverse()
 
 <Layout>
 	<h1 class="title">The Content Driven Website</h1>
+	<p>Demo and a proof of consept for self-hosted site using fs-db and Astro. Not a dating site despite the name.</p>
+	<br>
 	<h3>Messages</h3>
 	<div class="messages">
 		{messages.map(m => <div class="message" id={`message-${m.id}`}>
@@ -85,6 +87,25 @@ messages.reverse()
 		<button type="submit" style="flex-grow: 2;">Add</button>
 	</form>
 	<div style="min-height: 30px;"></div>
+	<br>
+	<h2 id="lcg-title">Good LCG Values</h2>
+	<p>All values produce 100% coverage of the possible values</p>
+	<div class="tableWrapper">
+		<table class="lcg-table mono">
+			<tr>
+				<th>Name</th>
+				<th>M</th>
+				<th>A</th>
+				<th>C</th>
+			</tr>
+			{GOOD_LCG_VALUES.map(v => <tr>
+				<td>{v.name || 'Unnamed'}</td>
+				<td>{v.m}</td>
+				<td>{v.a}</td>
+				<td>{v.c}</td>
+			</tr>)}
+		</table>
+	</div>
 </Layout>
 
 <style>
@@ -143,5 +164,22 @@ messages.reverse()
 	}
 	.message:target {
 		background-color: #f0f0f015;
+	}
+	#lcg-title {
+		font-size: clamp(0.9rem, 8.5vw, 2rem);
+	}
+	.lcg-table {
+		border: 1px dashed red;
+		text-align: left;
+		border-collapse: collapse;
+		width: clamp(350px, 100%, 500px);
+	}
+	.lcg-table tr:nth-child(odd) {
+		background-color: #f0f0f015;
+	}
+	.tableWrapper {
+		overflow-x: scroll;
+		width: 100%;
+		margin-bottom: 100px;
 	}
 </style>

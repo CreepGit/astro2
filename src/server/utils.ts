@@ -1,6 +1,71 @@
 import { PrismaClient } from "@prisma/client"
 const prisma = new PrismaClient()
 
+export const GOOD_LCG_VALUES: {
+    a: number,
+    m: number,
+    c: number,
+    x: number,
+    name?: string,
+}[] = [
+    {
+        a: 214013,
+        m: 7311593,
+        c: 1,
+        x: 0,
+        name: "52^4 7M",
+    },
+    {
+        a: 214013,
+        m: 14776331,
+        c: 1,
+        x: 0,
+        name: "62^4 14M",
+    },
+    {
+        a: 69069,
+        m: 380204023,
+        c: 1,
+        x: 0,
+        name: "52^5 380M",
+    },
+    {
+        a: 214013,
+        m: 916132829,
+        c: 1,
+        x: 0,
+        name: "62^5 916M",
+    },
+    {
+        a: 22695477,
+        m: 19770609653,
+        c: 1,
+        x: 0,
+        name: "52^6 19B",
+    },
+    {
+        a: 22695477,
+        m: 56800235549,
+        c: 1,
+        x: 0,
+        name: "62^6 56B",
+    },
+    {
+        a: 69069,
+        m: 1028071702519,
+        c: 1,
+        x: 0,
+        name: "52^7 1T",
+    },
+    {
+        a: 48271,
+        m: 3521614606199,
+        c: 1,
+        x: 0,
+        name: "62^7 3T",
+    }
+]
+
 export function stepLCG(a: number, c: number, m: number, x: number) {
     return (a * x + c) % m
 }
