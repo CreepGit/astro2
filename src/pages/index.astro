@@ -58,7 +58,7 @@ messages.reverse()
 ---
 
 <Layout>
-	<h1>The Content Driven Website</h1>
+	<h1 class="title">The Content Driven Website</h1>
 	<h3>Messages</h3>
 	<div class="messages">
 		{messages.map(m => <div class="message" id={`message-${m.id}`}>
@@ -75,7 +75,7 @@ messages.reverse()
 	<form method="POST" style="display: flex; flex-direction: row; gap: 0.25rem; width: 100%; padding-top: 0.5rem;">
 		<span>Add Message</span>
 		<div class="inputArea" style="flex-grow: 15;">
-			<input type="text" name="message" minlength="5" maxlength="200" />
+			<input id="message-text-input" type="text" name="message" minlength="5" maxlength="200" placeholder="Add Message" />
 			{errors.message && <span style="color: red;">{errors.message}</span>}
 		</div>
 		<div class="inputArea">
@@ -88,6 +88,9 @@ messages.reverse()
 </Layout>
 
 <style>
+	.title {
+		font-size: clamp(1rem, 7vw, 2.25rem);
+	}
 	.messages {
 		border: 1px dashed red;
 		padding: 1rem 0;
@@ -99,9 +102,25 @@ messages.reverse()
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
+		overflow: hidden;
 	}
 	.inputArea input {
 		flex-grow: 1;
+	}
+	form {
+		overflow: hidden;
+	}
+	
+	#message-text-input::placeholder {
+			opacity: 0;
+		}
+	@media screen and (max-width: 568px) {
+		form > span {
+			display: none;
+		}
+		#message-text-input::placeholder {
+			opacity: 1;
+		}
 	}
 	.replyTo {
 		--reply-to-color: #fff6;
