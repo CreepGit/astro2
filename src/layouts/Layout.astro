@@ -28,9 +28,6 @@
 		margin: 0;
 		box-sizing: border-box;
 	}
-	body {
-		padding: min(1rem, 2%);
-	}
 	.mono {
 		font-family: 'Space Mono', monospace;
 		font-size: 80%;
@@ -38,10 +35,14 @@
 </style>
 
 <style>
-	html,
-	body {
+	html {
 		margin: 0;
 		background: light-dark(#ccc, #333);
-		width: 100%;
+	}
+	body {
+		width: min(100%, 1000px) !important;
+		margin: auto !important;
+		padding: min(1rem, 2%) !important;
+		padding-bottom: 0 !important;
 	}
 </style>

@@ -38,7 +38,7 @@ if (!message) {
     {message.replies.length > 0 && <div style="margin: 1rem; padding: 1rem; width: fit-content; background: #fff1;">
         <h2>Replies ({message.replies.length})</h2>
         <div>
-            {message.replies.map(r => <div><a style="color: #a57549;" href={`/message/${r.id}`}>{r.id}</a>: {r.message}</div>)}
+            {message.replies.map(r => <div><a class="mono" style="color: #a57549;" href={`/message/${r.id}`}>{r.id}</a>: {r.message}</div>)}
         </div>
     </div>}
 </Layout>

@@ -100,6 +100,9 @@ function findPrimeUnder(n: number, howManyPrimesDown?: number) {
         if (isPrime(n)) {
             howManyPrimesDown--;
         }
+        if (n < 0) {
+            throw new Error("findPrimeUnder: n < 0")
+        }
     }
     return n;
 }
@@ -151,9 +154,9 @@ function testThis() {
     let lastAnnouncedPercent = 0
     
     for (let i = 0; i < ITERATIONS; i++) {
-        const a = findPrimeUnder(Math.floor(Math.random() * 100000));
+        const a = findPrimeUnder(Math.floor(1000 + Math.random() * 100000));
         const c = 1 // Math.floor(Math.random() * 1000000);
-        const m = findPrimeUnder(Math.floor(Math.random() * 1000000));
+        const m = findPrimeUnder(Math.floor(1000 + Math.random() * 1000000));
         const prediction = checkFullPeriod(m, a, c);
         const resultCount = runLCGToCompletion(m, a, c, 0);
         const resultStatus = resultCount == m
@@ -200,4 +203,119 @@ function testThis() {
     console.log(`Bad Success: ${summary.badSuccess}/${summary.badSuccess + summary.badFail} (${badRate})`)
 }
 
-testThis()
+type StandardResult<T> = {
+    success: true,
+    value: T,
+}|{
+    success: false,
+    error: string
+}
+
+export function findValuesForNearM(mTarget: number): StandardResult<{m: number, a: number, c: number}> {
+    if (mTarget < 1000) {
+        return {
+            success: false,
+            error: "You can only find values for larger values"
+        }
+    }
+
+    let CHECK_VALUES = 10
+
+    // Allow more tries under 1M
+    if (mTarget < 1_000_000) {
+        CHECK_VALUES = 250
+    } else if (mTarget < 1_000_000_000) {
+        CHECK_VALUES = 20
+    }
+
+    const GOOD_A_VALUES = [
+        // Park-Miller (Minimal Standard)
+        16807,       // 7^5, used in MINSTD_RAND
+        48271,       // Used in MINSTD_RAND0
+        // Numerical Recipes recommended values
+        1664525,     // Used in Microsoft C/C++ rand()
+        1103515245,  // Used in glibc rand()
+        // Other well-tested values
+        69069,       // Used in Super-Duper
+        214013,      // Used in Microsoft Visual C/C++
+        22695477,    // From Numerical Recipes
+        // Values from L'Ecuyer's tables
+        630360016,
+        1366,
+        30345,
+        741103597,
+    ] as const
+
+    function getGoodCValue(m: number) {
+        // For optimal results, c should be:
+        // - Odd (if m is a power of 2)
+        // - Relatively prime to m (for any m)
+        // - Approximately m/2 or m/φ (where φ is golden ratio) for better distribution
+        
+        const TRIES = 100
+        for (let i = 0; i < TRIES; i++) {
+            // From 0.7 to 1.2 of M then halved
+            const randomValue = Math.random() * 0.5 + 0.7
+
+            const STRATEGIES = [
+                "divier2",
+                "divier1.618",
+                "low",
+                "random"
+            ]
+            const strategy = STRATEGIES[Math.floor(Math.random() * STRATEGIES.length)]
+            
+            let c = -1;
+            switch (strategy) {
+                case "divier2":
+                    c = Math.floor(randomValue * m / 2)
+                    break;
+                case "divier1.618":
+                    c = Math.floor(randomValue * m / 1.618)
+                    break;
+                case "low":
+                    c = Math.ceil(randomValue * Math.sqrt(m) / 10)
+                    break;
+                case "random":
+                    c = Math.floor(randomValue * m)
+                    break;
+            }
+
+            if (c <= 3) {
+                c = 1
+            } else {
+                c = findPrimeUnder(c)
+            }
+            if (gcd(c, m) === 1) {
+                return c
+            }
+        }
+
+        return 1
+    }
+
+    for (let i = 0; i < CHECK_VALUES; i++) {
+        const nOfPrimesUnder = Math.ceil(Math.random() * 10)
+        const m = findPrimeUnder(mTarget, nOfPrimesUnder)
+        const a = GOOD_A_VALUES[Math.floor(Math.random() * GOOD_A_VALUES.length)]
+        const c = getGoodCValue(m)
+
+        const result = checkFullPeriod(m, a, c)
+
+        if (result.success) {
+            return {
+                success: true,
+                value: {
+                    m,
+                    a,
+                    c,
+                }
+            }
+        }
+    }
+
+    return {
+        success: false,
+        error: "No values found, try again with different target value"
+    }
+}
