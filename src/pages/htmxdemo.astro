@@ -1,0 +1,13 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+	<h1>HTMX Demo</h1>
+    <div>
+        <button hx-get="/inners/innerlcggenerated?targetM=100000" hx-target="#content">Get Content</button>
+    </div>
+    <div id="content">
+        <p>Content will be loaded here</p>
+    </div>
+</Layout>

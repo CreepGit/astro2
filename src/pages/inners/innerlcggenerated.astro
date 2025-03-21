@@ -1,0 +1,88 @@
+---
+import { findValuesForNearM } from "../../server/LCG_math"
+
+export const partial = true
+
+// Get query parameters from the URL
+const formData = await Astro.request.formData()
+const targetM = formData.get('targetM')
+const lcgCount = Number(formData.get('lcgCount'))
+const problems = []
+
+if (!targetM) {
+    problems.push("No target M")
+}
+
+if (targetM && Number(targetM) < 1000) {
+    problems.push("Target M is too small")
+}
+
+if (![1,3,10,25].includes(Number(lcgCount))) {
+    problems.push("Count is invalid")
+}
+
+
+const MAXIMUM_ALLOWED_NUMBER_SOLO = 3521614606199 * 10000
+const MAXIMUM_ALLOWED_NUMBER = 3521614606199 * 110 / (lcgCount * lcgCount)
+if (lcgCount == 1) {
+    if (Number(targetM) > MAXIMUM_ALLOWED_NUMBER_SOLO) {
+        problems.push("Target M is too large. Lower Target or Count")
+    }
+} else if (Number(targetM) > MAXIMUM_ALLOWED_NUMBER) {
+    problems.push("Target M is too large. Lower Target or Count")
+}
+
+const lcg_values: any[] = []
+if (problems.length == 0) {
+    try {
+        for (let i = 0; i < lcgCount; i++) {
+            const result = await findValuesForNearM(Number(targetM))
+            if (result.success) {
+                lcg_values.push(result.value)
+            } else {
+                lcg_values.push({error: result.error})
+            }
+        }
+    } catch (e) {
+        problems.push("Error: " + e)
+    }
+}
+---
+
+{problems.length == 0 ? <div class="tableWrapper">
+    <table class="lcg-table mono">
+        <tr>
+            <th>M</th>
+            <th>A</th>
+            <th>C</th>
+        </tr>
+        {lcg_values.map(v => <tr>
+            <td>{v.m}</td>
+            <td>{v.a}</td>
+            <td>{v.c}</td>
+        </tr>)}
+    
+        <style>
+            .lcg-table {
+                border: 1px dashed red;
+                text-align: left;
+                border-collapse: collapse;
+                width: clamp(250px, 100%, 500px);
+                white-space: nowrap;
+            }
+            .lcg-table td {
+                padding-right: 1.25ch;
+            }
+            .lcg-table tr:nth-child(odd) {
+                background-color: #f0f0f015;
+            }
+            .tableWrapper {
+                overflow-x: auto;
+                width: 100%;
+            }
+        </style>
+    </table>
+</div> : <div>
+    {problems.map(p => <p>{p}</p>)}
+</div>}
+

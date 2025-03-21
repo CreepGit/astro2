@@ -99,7 +99,10 @@ if (Astro.request.method == "POST") {
 	const formType = formData.get("formType")
 
 	if (formType == "message") {
-		return await handleFormMessage(formData)
+		const ret = await handleFormMessage(formData)
+		if (ret) {
+			return ret
+		}
 	} else if (formType == "lcg") {
 		await handleFormLCG(formData)
 	}
@@ -120,6 +123,11 @@ const messages = await prisma.frontPageMessage.findMany({
 })
 messages.reverse()
 
+function setReplyAlpineFunction(m: any) {
+	// The client function is generated on the server:
+	return `highlighted = '${m.replyToId}'`
+}
+
 console.log("Fetching /")
 ---
 
@@ -127,39 +135,44 @@ console.log("Fetching /")
 	<h1 class="title">The Content Driven Website</h1>
 	<p>Demo and a proof of consept for self-hosted site using fs-db and Astro. Not a dating site despite the name.</p>
 	<br>
-	<h3>Messages</h3>
-	<div class="messages">
-		{messages.map(m => <div class="message" id={`message-${m.id}`}>
-			{m.replyToId && <div class="replyTo">
-					<span>Reply to
-					<a href={`#message-${m.replyToId}`}>{m.replyToId}</a>
-					</span>
-				</div>}
-			<span>
-				<a href=`message/${m.id}` class="mono" style="color: #a57549">{m.id}</a>: {m.message}
-				<button 
-					class="reply-button" 
-					onclick={`document.querySelector('input[name="replyToId"]').value = '${m.id}'; document.querySelector('#message-text-input').focus();`}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><path fill="currentColor" d="M185.2 128.6V19.7L0 204.9l185.2 185.2v-109c152.5 0 250.5 0 326.8 217.9c0-108.9 10.9-370.4-326.8-370.4"/></svg>
-					Reply
-				</button>
-			</span>
-		</div>)}
+	<div x-data="{replyToId: '', highlighted: '', setIdAndFocus(id) {
+		this.replyToId = id
+		this.$refs.messageInput.focus()
+	}}">
+		<h3>Messages</h3>
+		<div class="messages">
+			{messages.map(m => <div class="message" id={`message-${m.id}`} x-bind:class={`highlighted == '${m.id}' ? 'messageHighlighted' : ''`}>
+				{m.replyToId && <div class="replyTo">
+						<span>Reply to
+						<a href={`#message-${m.replyToId}`} @click.prevent={setReplyAlpineFunction(m)}>{m.replyToId}</a>
+							</span>
+					</div>}
+				<span>
+					<a href=`message/${m.id}` class="mono" style="color: #a57549">{m.id}</a>: {m.message}
+					<button
+						class="reply-button"
+						@click=`setIdAndFocus('${m.id}')`
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><path fill="currentColor" d="M185.2 128.6V19.7L0 204.9l185.2 185.2v-109c152.5 0 250.5 0 326.8 217.9c0-108.9 10.9-370.4-326.8-370.4"/></svg>
+						Reply
+					</button>
+				</span>
+			</div>)}
+		</div>
+		<form method="POST" style="display: flex; flex-direction: row; gap: 0.25rem; width: 100%; padding-top: 0.5rem;">
+			<input type="hidden" name="formType" value="message" />
+			<span>Add Message</span>
+			<div class="inputArea" style="flex-grow: 15;">
+				<input id="message-text-input" x-ref="messageInput" type="text" name="message" minlength="5" maxlength="200" placeholder="Add Message" />
+				{errors.message && <span style="color: red;">{errors.message}</span>}
+			</div>
+			<div class="inputArea">
+				<input id="reply-to-id-input" class="mono" type="text" name="replyToId" x-model="replyToId" placeholder="Reply to ID" />
+				{errors.replyToId && <span style="color: red;">{errors.replyToId}</span>}
+			</div>
+			<button type="submit" style="flex-grow: 2;">Add</button>
+		</form>
 	</div>
-	<form method="POST" style="display: flex; flex-direction: row; gap: 0.25rem; width: 100%; padding-top: 0.5rem;">
-		<input type="hidden" name="formType" value="message" />
-		<span>Add Message</span>
-		<div class="inputArea" style="flex-grow: 15;">
-			<input id="message-text-input" type="text" name="message" minlength="5" maxlength="200" placeholder="Add Message" />
-			{errors.message && <span style="color: red;">{errors.message}</span>}
-		</div>
-		<div class="inputArea">
-			<input type="text" name="replyToId" value="" placeholder="Reply to ID" />
-			{errors.replyToId && <span style="color: red;">{errors.replyToId}</span>}
-		</div>
-		<button type="submit" style="flex-grow: 2;">Add</button>
-	</form>
 	<div style="min-height: 30px;"></div>
 	<br>
 	<h2 id="lcg-title">Good LCG Values</h2>
@@ -183,7 +196,7 @@ console.log("Fetching /")
 	<div>
 		<h2 id="lcg-title-generate">Can't find your base? Generate your own!</h2>
 		<p>All of the generated values have full period</p>
-		<form method="POST">
+		<form method="POST" hx-post="/inners/innerlcggenerated" hx-target="#generation-target">
 			<input type="hidden" name="formType" value="lcg" />
 			<input type="number" name="targetM" placeholder="Target M Size" />
 			<select name="lcgCount">
@@ -192,11 +205,15 @@ console.log("Fetching /")
 				<option value="10">Count 10</option>
 				<option value="25">Count 25</option>
 			</select>
-			<button type="submit">Generate</button>
+			<button type="submit">Generate
+				<span class="htmx-indicator	">LOADING....</span>
+			</button>
 			<div>
 				{errors.lcg_generic && <span style="color: red;">{errors.lcg_generic}</span>}
 			</div>
-			{lcg_values && lcg_values.length > 0 && <div class="tableWrapper">
+			<div class="tableWrap">
+			</div>
+			<!-- {lcg_values && lcg_values.length > 0 && <div class="tableWrapper">
 				<table class="lcg-table mono">
 					<tr>
 						<td>M</td>
@@ -218,10 +235,12 @@ console.log("Fetching /")
 						</tr>)}}
 					)}
 				</table>
-			</div>}
+			</div>} -->
 		</form>
+		<div id="generation-target"></div>
 	</div>
-	<div style="min-height: 30px;"></div>
+	<!-- <div hx-ext="sse" sse-connect="/inners/sse1" sse-swap="EventName"></div> -->
+	<div style="min-height: 300px;"></div>
 </Layout>
 
 <style>
@@ -246,6 +265,16 @@ console.log("Fetching /")
 	}
 	form {
 		overflow: hidden;
+	}
+	#reply-to-id-input {
+		width: 7ch;
+		transition: width 0.2s ease;
+	}
+	#reply-to-id-input:focus {
+		width: 14ch !important;
+	}
+	#reply-to-id-input:hover {
+		width: 7.5ch;
 	}
 	
 	#message-text-input::placeholder {
@@ -279,7 +308,7 @@ console.log("Fetching /")
 		padding: 0 1rem;
 		position: relative;
 	}
-	.message:target {
+	.messageHighlighted {
 		background-color: #f0f0f015;
 	}
 	.reply-button {
